@@ -5,7 +5,7 @@ Linked Data Sets module
 This [Omeka S](https://omeka.org/s/) module provides assistance to **describe** and **publish** your dataset as so called Linked Data Sets.
 
 The Linked Data Sets (LDS) module adds the following functionalities to Omeka S:
-- make dataset descriptions which conform to the guidelines described in [NDE Requirements for datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) and publish these in a RDF format making the datasets **findable** and **accessible**.
+- make dataset descriptions which conform to schema.org as described in [NDE Requirements for datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) and publish these in a RDF format making the datasets **findable** and **accessible**.
 - make a RDF datadump of Item Set(s), metadata is harvested and stored after which the distribution part of the datasetdescription (and data catalog) is updated.
 
 
