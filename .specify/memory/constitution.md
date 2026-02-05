@@ -51,11 +51,9 @@ cost for deployments and preserves user data integrity.
 
 ### IV. Test-First & Quality Gates
 All new features and bug fixes MUST include automated tests: unit tests for core
-logic and integration tests for Omeka S interactions (e.g., Item sets, resources,
-serialization). Tests must be runnable locally and in CI. Changes to behavior that
-affect stability, data, or public contracts require test coverage demonstrating
-both the old and new behavior where applicable. Static analysis (phpstan) and
-coding-style checks (php-cs-fixer / phpcs) MUST pass in CI. Rationale: tests and
+logic. We do NOT need integration tests.
+Tests must be runnable locally. No GitHub CI workflow required. Run static analysis (phpstan) and
+coding-style checks (php-cs-fixer / phpcs) locally and they MUST pass. Rationale: tests and
 static checks catch regressions early and codify expectations for maintainers.
 
 ### V. Observability & Simplicity
@@ -81,8 +79,8 @@ support and debug in production Omeka S deployments.
 - Code review: PRs require at least one approving review from a project
   maintainer or an experienced contributor. Significant API or principle changes
   SHOULD include discussion in an issue before implementation.
-- CI gates: pipeline MUST run `phpstan`, `phpunit`, `phpcs`/`php-cs-fixer`, and
-  `composer audit`. PRs that fail CI MUST not be merged.
+- CI gates: MUST run `phpstan`, `phpunit`, `phpcs`/`php-cs-fixer`, and
+  `composer audit`. These are run manually and locally (NOT as GitHub workflow).
 
 ## Governance
 
@@ -110,5 +108,5 @@ Compliance review:
 
 For runtime development guidance, see `doc/Development.md` and `README.md`.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption
-date unknown - maintainers should provide | **Last Amended**: 2026-02-04
+**Version**: 1.1.0 | **Ratified**: 2026-02-05: original adoption
+date unknown - maintainers should provide | **Last Amended**: 2026-02-05
