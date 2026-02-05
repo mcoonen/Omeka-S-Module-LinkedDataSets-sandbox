@@ -289,11 +289,73 @@ class InstallResources
         ?string $module = null
     ): bool {
         $vocabularyData = $this->prepareVocabularyData($vocabularyData, $module);
-        $exists = $this->checkVocabulary($vocabularyData, $module);
-        if ($exists === false) {
-            return $this->createVocabulary($vocabularyData, $module);
+
+        $namespaceUri = $vocabularyData['vocabulary']['o:namespace_uri'] ?? '';
+        $prefix = $vocabularyData['vocabulary']['o:prefix'] ?? '';
+
+        // Look for existing vocabularies by prefix and by namespace separately.
+        // TODO: make this respect trailing slashes in the namespace uri, as in checkVocabulary() and createVocabulary().
+        $vocabByPrefix = $this->api->searchOne('vocabularies', ['prefix' => $prefix])->getContent();
+        $vocabByNamespace = $this->api->searchOne('vocabularies', ['namespace_uri' => $namespaceUri])->getContent();
+
+        $messenger = $this->services->get('ControllerPluginManager')->get('messenger');
+
+        // If either a vocabulary with the same prefix or the same namespace exists,
+        // do not overwrite. Send a warning message to the UI and skip creation/update.
+        if ($vocabByPrefix || $vocabByNamespace) {
+
+            // Vocab exists: same prefix and same namespace.
+            if ($vocabByPrefix && $vocabByNamespace) {
+                // If they are the same vocabulary, it was already installed.
+                try {
+                    $same = $vocabByPrefix->id() === $vocabByNamespace->id();
+                } catch (\Exception $e) {
+                    $same = false;
+                }
+                if ($same) {
+                    $message = new Message(
+                        'Vocab-WARN-1: The vocabulary "%s" is already installed and was kept.',
+                        $vocabularyData['vocabulary']['o:label']
+                    );
+                    $messenger->addWarning($message);
+                    return false;
+                }
+                // Different entities share the prefix and the namespace: skip.
+                $message = new Message(
+                    'Vocab-WARN-2: A vocabulary with the same prefix or namespace as "%s" already exists. Installation of this module\'s vocabulary "%s" was skipped.',
+                    $vocabularyData['vocabulary']['o:label'],
+                    $vocabularyData['vocabulary']['o:label']
+                );
+                $messenger->addWarning($message);
+                return false;
+            }
+
+            // Vocab exists: same prefix (different namespace).
+            if ($vocabByPrefix && !$vocabByNamespace) {
+                $message = new Message(
+//                    TODO: Case 3 is never reached. Instead: it errors in checkVocabulary() on line 94
+                    'Vocab-WARN-3: An existing vocabulary uses the same prefix "%s" with a different namespace. Installation of this module\'s vocabulary "%s" was skipped.',
+                    $prefix,
+                    $vocabularyData['vocabulary']['o:label']
+                );
+                $messenger->addWarning($message);
+                return false;
+            }
+
+            // Vocab exists: same namespace (different prefix).
+            if (!$vocabByPrefix && $vocabByNamespace) {
+                $message = new Message(
+                    'Vocab-WARN-4: An existing vocabulary uses the same namespace "%s" with a different prefix. Installation of this module\'s vocabulary "%s" was skipped.',
+                    $namespaceUri,
+                    $vocabularyData['vocabulary']['o:label']
+                );
+                $messenger->addWarning($message);
+                return false;
+            }
         }
-        return $this->updateVocabulary($vocabularyData, $module);
+
+        // Vocab does not exist: neither prefix nor namespace present: create new vocabulary.
+        return $this->createVocabulary($vocabularyData, $module);
     }
 
     /**
