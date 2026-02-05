@@ -181,24 +181,52 @@ class InstallResources
         /** @var \Omeka\Api\Representation\VocabularyRepresentation $vocabularyRepresentation */
         $vocabularyRepresentation = $this->api->searchOne('vocabularies', ['namespace_uri' => $namespaceUri])->getContent();
         if ($vocabularyRepresentation) {
+            $message = new Message(
+                'MC 1: vocabulary exists on namespace_uri "%s"', // @translate
+                $vocabularyData['vocabulary']['o:namespace_uri']
+            );
+            $messenger = $this->services->get('ControllerPluginManager')->get('messenger');
+            $messenger->addWarning($message);
+
+            //TODO: als dit true is, dan moet de module de vocab NIET aanmaken.
             return true;
         }
 
         // Check if the vocabulary have been already imported.
         $prefix = $vocabularyData['vocabulary']['o:prefix'];
         $vocabularyRepresentation = $this->api->searchOne('vocabularies', ['prefix' => $prefix])->getContent();
-        if (!$vocabularyRepresentation) {
-            return false;
-        }
+        if ($vocabularyRepresentation) {
+            // Check if it is the same vocabulary.
+            // See createVocabulary() about the trim.
+            if (rtrim($vocabularyRepresentation->namespaceUri(), '#/') === rtrim($namespaceUri, '#/')) {
+                $message = new Message(
+                    'MC 2A: vocabulary exists on prefix "%s" and has same namespace_uri "%s"', // @translate
+                    $vocabularyData['vocabulary']['o:prefix'], $vocabularyData['vocabulary']['o:namespace_uri']
+                );
+                $messenger = $this->services->get('ControllerPluginManager')->get('messenger');
+                $messenger->addWarning($message);
 
-        // Check if it is the same vocabulary.
-        // See createVocabulary() about the trim.
-        if (rtrim($vocabularyRepresentation->namespaceUri(), '#/') === rtrim($namespaceUri, '#/')) {
-            return true;
-        }
+                return true;
+            } else {
+                // It is another vocabulary with the same prefix.
+                $message = new Message(
+                    'MC 2B: vocabulary exists on prefix "%s", but is has a different namespace_uri', // @translate
+                    $vocabularyData['vocabulary']['o:prefix']
+                );
+                $messenger = $this->services->get('ControllerPluginManager')->get('messenger');
+                $messenger->addWarning($message);
 
-        // It is another vocabulary with the same prefix.
-        return null;
+                return null;
+            }
+        }
+        $message = new Message(
+            'MC 3: vocabulary DOES NOT exist on prefix "%s"', // @translate
+            $vocabularyData['vocabulary']['o:prefix']
+        );
+        $messenger = $this->services->get('ControllerPluginManager')->get('messenger');
+        $messenger->addWarning($message);
+
+        return false;
     }
 
     /**
